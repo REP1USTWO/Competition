@@ -1,0 +1,25 @@
+{
+  "note": "Only exact coordinates present in the supplied request sample. No inferred mirroring or ring. Supply verified official coordinates for other bases before competition.",
+  "loadout": ["railgun", "railgun", "rocket"],
+  "build_walls": false,
+  "bases": [
+    {
+      "source": "docs/request.txt: teamOur roles (sample evidence, not a complete region map)",
+      "team": "challenger",
+      "width": 41,
+      "height": 32,
+      "station": {"x": 10, "y": 24},
+      "weapons": [{"x": 9, "y": 24}, {"x": 10, "y": 25}, {"x": 9, "y": 25}],
+      "walls": [{"x": 5, "y": 20}, {"x": 5, "y": 21}]
+    },
+    {
+      "source": "docs/request.txt: teamEnemy roles; weapon sites absent",
+      "team": "defender",
+      "width": 41,
+      "height": 32,
+      "station": {"x": 30, "y": 10},
+      "weapons": [],
+      "walls": [{"x": 28, "y": 7}]
+    }
+  ]
+}

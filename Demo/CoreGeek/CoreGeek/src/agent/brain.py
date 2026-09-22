@@ -1,6 +1,7 @@
 from typing import Any
 
 from .grid import next_step
+from .validator import TurnPlanningContext
 from .protocol import (
     PIONEER,
     Pos,
@@ -33,7 +34,10 @@ def decide(payload: dict[str, Any]) -> dict[str, dict[str, Any]]:
         _day(turn, commands)
     else:
         _night(turn, commands)
-    return {str(key): value for key, value in commands.items()}
+    context = TurnPlanningContext(turn)
+    for key, value in commands.items():
+        context.try_add(key, value)
+    return {str(key): value for key, value in context.commands.items()}
 
 
 def _day(turn: Turn, commands: dict[int, dict[str, Any]]) -> None:
