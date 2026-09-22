@@ -279,3 +279,18 @@ def build_command(pos: Pos, name: str) -> dict[str, Any]:
 def attack_command(controller_id: int, pos: Pos | list[Pos]) -> dict[str, Any]:
     targets = [pos] if isinstance(pos, Pos) else pos
     return {"action": "attack", "targetPos": [p.dump() for p in targets], "controllerId": str(controller_id)}
+
+
+def sell_command(name: str, num: int) -> dict[str, Any]:
+    return {"action": "sell", "name": name, "num": num}
+
+
+def buy_command(name: str, num: int = 1) -> dict[str, Any]:
+    return {"action": "buy", "name": name, "num": num}
+
+
+def use_command(name: str, pos: Pos | None = None) -> dict[str, Any]:
+    command: dict[str, Any] = {"action": "use", "name": name}
+    if pos is not None:
+        command["targetPos"] = [pos.dump()]
+    return command

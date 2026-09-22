@@ -1,5 +1,6 @@
 from heapq import heappop, heappush
 from itertools import count
+from typing import Iterable
 
 from .protocol import Pos, Turn, Unit, distance
 
@@ -10,8 +11,18 @@ _STEPS = (
 )
 
 
-def next_step(turn: Turn, moving: Unit, goal: Pos) -> Pos | None:
-    blocked = turn.blocked(moving)
+def _search(
+    turn: Turn,
+    moving: Unit,
+    goal: Pos,
+    extra_blocked: Iterable[Pos] = (),
+) -> tuple[dict[Pos, Pos], int] | None:
+    """A* over the 8-direction grid; returns (came_from, cost) or None."""
+    if moving.pos == goal:
+        return {}, 0
+    blocked = set(turn.blocked(moving))
+    blocked.update(extra_blocked)
+    blocked.discard(moving.pos)
     order = count()
     frontier: list[tuple[int, int, int, Pos]] = [
         (distance(moving.pos, goal), 0, next(order), moving.pos)
@@ -25,7 +36,7 @@ def next_step(turn: Turn, moving: Unit, goal: Pos) -> Pos | None:
         if current in seen:
             continue
         if current == goal:
-            return _first_step(came_from, moving.pos, goal)
+            return came_from, cost
         seen.add(current)
         for dx, dy in _STEPS:
             step = Pos(current.x + dx, current.y + dy)
@@ -46,6 +57,30 @@ def next_step(turn: Turn, moving: Unit, goal: Pos) -> Pos | None:
                 ),
             )
     return None
+
+
+def next_step(
+    turn: Turn,
+    moving: Unit,
+    goal: Pos,
+    extra_blocked: Iterable[Pos] = (),
+) -> Pos | None:
+    result = _search(turn, moving, goal, extra_blocked)
+    if result is None:
+        return None
+    came_from, _ = result
+    return _first_step(came_from, moving.pos, goal)
+
+
+def path_length(
+    turn: Turn,
+    moving: Unit,
+    goal: Pos,
+    extra_blocked: Iterable[Pos] = (),
+) -> int | None:
+    """Shortest walkable distance in rounds, or None when unreachable."""
+    result = _search(turn, moving, goal, extra_blocked)
+    return None if result is None else result[1]
 
 
 def _first_step(came_from: dict[Pos, Pos], start: Pos, goal: Pos) -> Pos:
