@@ -43,6 +43,9 @@ SITE_FAILURE_LIMIT = 2
 MOVE_BLOCK_ROUNDS = 3
 MINE_RETRY_ROUNDS = 5
 MAX_TOWERS = 3
+WALL_START_DAY = 3
+WALL_GATE_COUNT = 2
+WALL_MATERIAL = "stone"
 DEFAULT_MINERAL_PRICE = {"stone": 1, "iron": 3, "copper": 5}
 ROBOT_VALUE = {"smallRobot": 1, "middleRobot": 2, "largeRobot": 4, "bossRobot": 10}
 _NEIGHBOUR_STEPS = (
@@ -440,10 +443,13 @@ def _build_phase(
         and role.unit_id not in commands
     ]
     slots = MAX_TOWERS - len(standing)
+    # Only the top-priority candidates are real targets; fallback ring cells
+    # enter the list only when better sites get blacklisted by failures.
+    wanted = sites[:slots]
     pending = []
     # Pass 1: build immediately at sites a free worker already touches.
-    for site, name in sites:
-        if slots <= 0 or not workers:
+    for site, name in wanted:
+        if not workers:
             break
         adjacent = [role for role in workers if distance(role.pos, site) <= 1]
         if not adjacent:
@@ -479,11 +485,96 @@ def _worker_day(state: _State, role: Unit, commands: dict[int, dict[str, Any]]) 
     if role.health * 2 <= 220 and "Medicine" in role.backpack:
         commands[role.unit_id] = use_command("Medicine")
         return
+    if _wall_duty(state, role, commands):
+        return
     minerals = [item for item in role.backpack if item in MINERALS]
     if minerals and (role.backpack_full or _should_bank(state, role, minerals)):
         if _bank_at_vendor(state, role, commands):
             return
     _mine(state, role, commands)
+
+
+# ---------------------------------------------------------------------------
+# Walls (C policy): a distance-2 ring soaks robot attacks while towers shoot.
+# Legality of the wall zone is D-level; failed probes are blacklisted by the
+# shared build-failure mechanism, so guessing costs at most a few rounds.
+
+
+def _wall_sites(state: _State) -> tuple[Pos, ...]:
+    if state.station is None:
+        return ()
+    towers = [tower.pos for tower in state.towers.values()]
+    standing = {wall.pos for wall in state.turn.walls()}
+    xs = [pos.x for pos in state.footprint]
+    ys = [pos.y for pos in state.footprint]
+    centre = Pos(state.turn.width // 2, state.turn.height // 2)
+    ring = []
+    for x in range(min(xs) - 2, max(xs) + 3):
+        for y in range(min(ys) - 2, max(ys) + 3):
+            pos = Pos(x, y)
+            if not state.turn.land(pos):
+                continue
+            if _footprint_distance(pos, state.footprint) != 2:
+                continue
+            if any(distance(pos, tower) <= 1 for tower in towers):
+                continue
+            ring.append(pos)
+    # Build the side facing the map centre first; the far side keeps gates so
+    # roles can still leave for the economy and return at dusk.
+    ring.sort(key=lambda pos: (distance(pos, centre), pos.x, pos.y))
+    walled = ring[:-WALL_GATE_COUNT] if len(ring) > WALL_GATE_COUNT else ring
+    return tuple(
+        pos for pos in walled
+        if pos not in standing
+        and pos not in state.turn.occupied_cells()
+        and state.mem.build_failures.get((pos, "wall"), 0) < SITE_FAILURE_LIMIT
+    )
+
+
+def _walls_pending(state: _State) -> bool:
+    if state.station is None or len(state.towers) < MAX_TOWERS:
+        return False
+    if not _layout().build_walls and state.turn.day_number < WALL_START_DAY:
+        return False
+    return bool(_wall_sites(state))
+
+
+def _stone_worker_id(state: _State) -> int | None:
+    workers = [
+        role.unit_id for role in state.roles.values() if role.kind == WORKER
+    ]
+    return min(workers) if workers else None
+
+
+def _wall_duty(state: _State, role: Unit, commands: dict[int, dict[str, Any]]) -> bool:
+    if not _walls_pending(state) or role.unit_id != _stone_worker_id(state):
+        return False
+    sites = _wall_sites(state)
+    if WALL_MATERIAL in role.backpack:
+        adjacent = [pos for pos in sites if distance(role.pos, pos) == 1]
+        if adjacent:
+            commands[role.unit_id] = build_command(adjacent[0], "wall")
+            state.claimed.add(adjacent[0])
+            return True
+        options = []
+        for pos in sites:
+            cells = _stand_cells(state, pos, role)
+            if cells:
+                walk = state.reach(role, cells[0])
+                if walk is not None:
+                    options.append((walk, pos))
+        if options:
+            options.sort(key=lambda item: (item[0], item[1].x, item[1].y))
+            walk, pos = options[0]
+            if state.turn.remaining_day_rounds > walk * 2 + DUSK_MARGIN + 2:
+                step = _approach(state, role, pos, state.claimed)
+                if step is not None:
+                    commands[role.unit_id] = move_command(step)
+                    return True
+        return True
+    state.mem.focus_mineral[role.unit_id] = WALL_MATERIAL
+    _mine(state, role, commands)
+    return True
 
 
 def _should_bank(state: _State, role: Unit, minerals: list[str]) -> bool:
@@ -588,8 +679,9 @@ def _mine(state: _State, role: Unit, commands: dict[int, dict[str, Any]]) -> Non
                         stand_options.append((walk, cells[0], pos))
             if not stand_options:
                 continue
-            walk, _, pos = min(stand_options)
-            if turn.remaining_day_rounds <= walk + DUSK_MARGIN + 4:
+            walk, _, pos = min(stand_options, key=lambda item: item[0])
+            # Round trip: going out must still leave time to walk back home.
+            if turn.remaining_day_rounds <= walk * 2 + DUSK_MARGIN + 4:
                 continue
             candidate = (price / (walk + 2.0), mineral, pos)
         if best is None or candidate[0] > best[0]:
@@ -614,19 +706,27 @@ def _mine(state: _State, role: Unit, commands: dict[int, dict[str, Any]]) -> Non
 
 
 def _upgrade_plan(state: _State) -> list[tuple[str, Unit]]:
-    """Repair-via-upgrade: upgrading restores full HP (A). Rebuild fund first."""
+    """Repair-via-upgrade: upgrading restores full HP (A). Rebuild fund first.
+
+    Order (C): weapon L1->L2 (rocket first: range/multi-target scale best),
+    station L2 (raw survival HP), rocket L3 (full map), station L3, then the
+    remaining weapon L2->L3 upgrades.
+    """
     plan: list[tuple[str, Unit]] = []
-    towers = sorted(state.towers.values(), key=lambda t: (t.level, t.health, t.unit_id))
+    towers = sorted(state.towers.values(), key=lambda t: (t.kind != "rocket", t.level, t.health, t.unit_id))
     for tower in towers:
         if tower.level == 1:
             plan.append(("WeaponUpgradeVoucher1", tower))
     if state.station is not None and state.station.level == 1:
         plan.append(("StationUpgradeVoucher1", state.station))
     for tower in towers:
-        if tower.level == 2:
+        if tower.kind == "rocket" and tower.level == 2:
             plan.append(("WeaponUpgradeVoucher2", tower))
     if state.station is not None and state.station.level == 2:
         plan.append(("StationUpgradeVoucher2", state.station))
+    for tower in towers:
+        if tower.kind != "rocket" and tower.level == 2:
+            plan.append(("WeaponUpgradeVoucher2", tower))
     return plan
 
 
@@ -684,14 +784,23 @@ def _pioneer_day(state: _State, role: Unit, commands: dict[int, dict[str, Any]])
 
 def _night(state: _State, commands: dict[int, dict[str, Any]]) -> None:
     _assignment(state)
+    expected: dict[int, int] = {}  # robot_id -> damage already claimed this round
+    robots_at = {robot.pos: robot for robot in state.turn.robots if robot.health > 0}
     for tower_id, role_id in sorted(state.pairs.items()):
         tower, role = state.towers[tower_id], state.roles[role_id]
         if distance(role.pos, tower.pos) <= 1:
             if tower.cooldown > 0:
                 continue
-            targets = _pick_targets(state, tower)
+            targets = _pick_targets(state, tower, expected)
             if targets is not None:
                 commands[tower_id] = attack_command(role_id, targets)
+                # Deconflict: later towers prefer robots not already dying.
+                per_target = {"gatling": 10, "railgun": 10 * tower.level,
+                              "rocket": 20}.get(tower.kind, 10)
+                for pos in targets if isinstance(targets, list) else [targets]:
+                    robot = robots_at.get(pos)
+                    if robot is not None:
+                        expected[robot.robot_id] = expected.get(robot.robot_id, 0) + per_target
             continue
         step = _approach(state, role, tower.pos, state.claimed)
         if step is not None:
@@ -711,16 +820,19 @@ def _night(state: _State, commands: dict[int, dict[str, Any]]) -> None:
                 commands[role.unit_id] = move_command(step)
 
 
-def _threat(state: _State, robot: Robot, damage: int) -> float:
+def _threat(state: _State, robot: Robot, damage: int, expected: int = 0) -> float:
     """Explainable scoring: protect the base first, prefer kills, skip bystanders."""
     gap = _footprint_distance(robot.pos, state.footprint) if state.footprint else 10
+    hp_left = robot.health - expected
     score = 1000.0 - gap * 20.0
     score += ROBOT_VALUE.get(robot.kind, 1) * 5.0
     if robot.target_team:
         score += 30.0 if robot.target_team == state.turn.team_type else -200.0
     if robot.abnormal_state == "dizzy":
         score -= 100.0
-    if robot.health <= damage:
+    if hp_left <= 0:
+        score -= 500.0  # another tower is already expected to finish it
+    elif hp_left <= damage:
         score += 40.0
     score -= robot.health * 0.01
     return score
@@ -732,16 +844,24 @@ def _within_90(origin: Pos, first: Pos, second: Pos) -> bool:
     return ax * bx + ay * by >= 0
 
 
-def _pick_targets(state: _State, tower: Unit) -> Pos | list[Pos] | None:
+def _pick_targets(
+    state: _State,
+    tower: Unit,
+    expected: dict[int, int] | None = None,
+) -> Pos | list[Pos] | None:
     reach = tower.range_of_attack()
     damage = {"gatling": 10, "railgun": 10 * tower.level, "rocket": 20}.get(tower.kind, 10)
+    expected = expected or {}
     robots = [
         robot for robot in state.turn.robots
         if robot.health > 0 and 0 < distance(tower.pos, robot.pos) <= reach
     ]
     if not robots:
         return None
-    robots.sort(key=lambda robot: _threat(state, robot, damage), reverse=True)
+    robots.sort(
+        key=lambda robot: _threat(state, robot, damage, expected.get(robot.robot_id, 0)),
+        reverse=True,
+    )
     count = 1 if tower.kind == "railgun" else tower.level
     chosen: list[Robot] = []
     if tower.kind == "gatling":

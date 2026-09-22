@@ -264,6 +264,39 @@ class EconomyTests(BrainTestCase):
             self.assertNotEqual(command["targetPos"][0], {"x": 8, "y": 27})
 
 
+class WallTests(BrainTestCase):
+    def three_towers(self):
+        return [tower(10030, "railgun", 9, 24), tower(10031, "railgun", 10, 25),
+                tower(10040, "rocket", 9, 25)]
+
+    def test_stone_worker_builds_ring_wall_from_day_three(self):
+        roles = [STATION, role(10010, x=9, y=22, backpack=["stone"]),
+                 role(10012, x=10, y=22), *self.three_towers()]
+        out = decide(payload(roles, round_no=261, gold=0))  # day 3 first round
+        builds = [c for c in out.values() if c["action"] == "build"]
+        self.assertTrue(any(c["name"] == "wall" for c in builds))
+
+    def test_no_walls_before_day_three(self):
+        roles = [STATION, role(10010, x=9, y=22, backpack=["stone"]),
+                 role(10012, x=10, y=22), *self.three_towers()]
+        out = decide(payload(roles, round_no=5, gold=0))
+        builds = [c for c in out.values() if c["action"] == "build"]
+        self.assertFalse(any(c["name"] == "wall" for c in builds))
+
+    def test_wall_site_blacklisted_after_repeated_failures(self):
+        roles = [STATION, role(10010, x=9, y=22, backpack=["stone", "stone"]),
+                 role(10012, x=10, y=22), *self.three_towers()]
+        first = decide(payload(roles, round_no=261, gold=0))
+        wall = next(c for c in first.values() if c.get("name") == "wall")
+        site = wall["targetPos"][0]
+        for round_no in (262, 263):
+            out = decide(payload(roles, round_no=round_no, gold=0,
+                                 results={"10010": False}))
+        retry = next((c for c in out.values() if c.get("name") == "wall"), None)
+        if retry is not None:
+            self.assertNotEqual(retry["targetPos"][0], site)
+
+
 class MultiNightSmokeTests(BrainTestCase):
     """Ten day/night cycles of decision smoke: no dead states, valid commands.
 
