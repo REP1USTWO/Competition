@@ -46,6 +46,55 @@ MAX_TOWERS = 3
 WALL_START_DAY = 3
 WALL_GATE_COUNT = 2
 WALL_MATERIAL = "stone"
+TOWER_MAX_HP = {1: 1000, 2: 1500, 3: 2000}
+
+
+class StrategyConfig:
+    """Tunable C-level policy knobs; defaults are the frozen Champion."""
+
+    def __init__(
+        self,
+        loadout: tuple[str, ...] | None = None,
+        day1_tower_cap: int = 3,
+        wall_mode: str = "ring",            # ring | none
+        wall_start_day: int = WALL_START_DAY,
+        dusk_margin: int = DUSK_MARGIN,
+        sell_fill_fraction: float = 1.0,    # bank once backpack fill >= fraction
+        gold_reserve: int = 0,
+        upgrade_use_threshold: float = 1.0,  # use voucher when hp fraction <= this
+        consumables_enabled: bool = False,
+        consumable_name: str = "DizzyWeapon",
+        consumable_from_day: int = 6,
+        consumable_min_cluster: float = 8.0,
+        wall_workers: int = 1,
+        station_l3_first: bool = True,
+    ) -> None:
+        self.loadout = loadout
+        self.day1_tower_cap = day1_tower_cap
+        self.wall_mode = wall_mode
+        self.wall_start_day = wall_start_day
+        self.dusk_margin = dusk_margin
+        self.sell_fill_fraction = sell_fill_fraction
+        self.gold_reserve = gold_reserve
+        self.upgrade_use_threshold = upgrade_use_threshold
+        self.consumables_enabled = consumables_enabled
+        self.consumable_name = consumable_name
+        self.consumable_from_day = consumable_from_day
+        self.consumable_min_cluster = consumable_min_cluster
+        self.wall_workers = wall_workers
+        self.station_l3_first = station_l3_first
+
+
+_CONFIG = StrategyConfig()
+
+
+def set_config(config: StrategyConfig) -> None:
+    global _CONFIG
+    _CONFIG = config
+
+
+def get_config() -> StrategyConfig:
+    return _CONFIG
 DEFAULT_MINERAL_PRICE = {"stone": 1, "iron": 3, "copper": 5}
 ROBOT_VALUE = {"smallRobot": 1, "middleRobot": 2, "largeRobot": 4, "bossRobot": 10}
 _NEIGHBOUR_STEPS = (
@@ -422,9 +471,12 @@ def _build_phase(
 ) -> None:
     turn = state.turn
     standing = {tower.pos for tower in state.towers.values()}
-    if len(standing) >= MAX_TOWERS or turn.gold < WEAPON_BUILD_COST:
+    tower_cap = MAX_TOWERS
+    if turn.day_number == 1:
+        tower_cap = min(tower_cap, _CONFIG.day1_tower_cap)
+    if len(standing) >= tower_cap or turn.gold < WEAPON_BUILD_COST:
         return
-    loadout = _layout().loadout
+    loadout = _CONFIG.loadout or _layout().loadout
     sites = []
     for index, site in enumerate(_weapon_sites(state)):
         if site in standing:
@@ -442,7 +494,7 @@ def _build_phase(
         if role.kind == WORKER and role.unit_id not in returning
         and role.unit_id not in commands
     ]
-    slots = MAX_TOWERS - len(standing)
+    slots = tower_cap - len(standing)
     # Only the top-priority candidates are real targets; fallback ring cells
     # enter the list only when better sites get blacklisted by failures.
     wanted = sites[:slots]
@@ -488,7 +540,11 @@ def _worker_day(state: _State, role: Unit, commands: dict[int, dict[str, Any]]) 
     if _wall_duty(state, role, commands):
         return
     minerals = [item for item in role.backpack if item in MINERALS]
-    if minerals and (role.backpack_full or _should_bank(state, role, minerals)):
+    fill_full = role.backpack_full or (
+        role.capacity is not None
+        and len(role.backpack) >= role.capacity * _CONFIG.sell_fill_fraction
+    )
+    if minerals and (fill_full or _should_bank(state, role, minerals)):
         if _bank_at_vendor(state, role, commands):
             return
     _mine(state, role, commands)
@@ -532,22 +588,24 @@ def _wall_sites(state: _State) -> tuple[Pos, ...]:
 
 
 def _walls_pending(state: _State) -> bool:
+    if _CONFIG.wall_mode == "none":
+        return False
     if state.station is None or len(state.towers) < MAX_TOWERS:
         return False
-    if not _layout().build_walls and state.turn.day_number < WALL_START_DAY:
+    if not _layout().build_walls and state.turn.day_number < _CONFIG.wall_start_day:
         return False
     return bool(_wall_sites(state))
 
 
-def _stone_worker_id(state: _State) -> int | None:
-    workers = [
+def _stone_worker_ids(state: _State) -> set[int]:
+    workers = sorted(
         role.unit_id for role in state.roles.values() if role.kind == WORKER
-    ]
-    return min(workers) if workers else None
+    )
+    return set(workers[: max(1, _CONFIG.wall_workers)])
 
 
 def _wall_duty(state: _State, role: Unit, commands: dict[int, dict[str, Any]]) -> bool:
-    if not _walls_pending(state) or role.unit_id != _stone_worker_id(state):
+    if not _walls_pending(state) or role.unit_id not in _stone_worker_ids(state):
         return False
     sites = _wall_sites(state)
     if WALL_MATERIAL in role.backpack:
@@ -667,7 +725,7 @@ def _mine(state: _State, role: Unit, commands: dict[int, dict[str, Any]]) -> Non
         adjacent = [pos for pos in mines if distance(role.pos, pos) == 1]
         if adjacent:
             score = float(price)
-            pick = min(adjacent)
+            pick = min(adjacent, key=lambda p: (p.x, p.y))
             candidate = (score + 1000.0, mineral, pick)
         else:
             stand_options = []
@@ -722,11 +780,13 @@ def _upgrade_plan(state: _State) -> list[tuple[str, Unit]]:
     for tower in towers:
         if tower.kind == "rocket" and tower.level == 2:
             plan.append(("WeaponUpgradeVoucher2", tower))
-    if state.station is not None and state.station.level == 2:
+    if state.station is not None and state.station.level == 2 and _CONFIG.station_l3_first:
         plan.append(("StationUpgradeVoucher2", state.station))
     for tower in towers:
         if tower.kind != "rocket" and tower.level == 2:
             plan.append(("WeaponUpgradeVoucher2", tower))
+    if state.station is not None and state.station.level == 2 and not _CONFIG.station_l3_first:
+        plan.append(("StationUpgradeVoucher2", state.station))
     return plan
 
 
@@ -736,9 +796,17 @@ def _pioneer_day(state: _State, role: Unit, commands: dict[int, dict[str, Any]])
         commands[role.unit_id] = use_command("Medicine")
         return
     plan = _upgrade_plan(state)
-    # 1. A voucher in the backpack goes to its building.
+    # 1. A voucher in the backpack goes to its building. With a delayed-use
+    # threshold the voucher doubles as an emergency heal (A: upgrade = full HP).
     for name, building in plan:
         if name in role.backpack:
+            max_hp = (1500 * building.level if building.kind == "station"
+                      else TOWER_MAX_HP.get(building.level, 1000))
+            # Delayed use is a station-only heal reserve; weapon vouchers are
+            # firepower and always apply immediately.
+            if (building.kind == "station"
+                    and building.health > max_hp * _CONFIG.upgrade_use_threshold):
+                break  # hold the voucher as a strategic reserve
             footprint = state.turn.footprint(building)
             if min(distance(role.pos, cell) for cell in footprint) == 1:
                 commands[role.unit_id] = use_command(name, building.pos)
@@ -748,12 +816,15 @@ def _pioneer_day(state: _State, role: Unit, commands: dict[int, dict[str, Any]])
                 commands[role.unit_id] = move_command(step)
             return
     # 2. Buy the next voucher when the rebuild fund is covered and time allows.
+    # Do not hoard: an unused voucher in the backpack is already a reserve.
     towers_missing = len(state.towers) < MAX_TOWERS
+    reserve = _CONFIG.gold_reserve + (WEAPON_BUILD_COST if towers_missing else 0)
+    holding_voucher = any(name in role.backpack for name, _ in plan)
     for name, _ in plan:
+        if name in role.backpack:
+            continue  # never double-buy a voucher already being held
         price = turn.shop_prices.get(name)
-        if price is None or turn.gold < price:
-            continue
-        if towers_missing and turn.gold - price < WEAPON_BUILD_COST:
+        if price is None or turn.gold - price < reserve:
             continue
         if role.backpack_full:
             break
@@ -776,6 +847,25 @@ def _pioneer_day(state: _State, role: Unit, commands: dict[int, dict[str, Any]])
         if step is not None:
             commands[role.unit_id] = move_command(step)
         return
+    # 3. Consumable reserve for boss nights (H: DizzyWeapon/Bomb, used by the
+    # rocket controller during its cooldown window).
+    if not _CONFIG.consumables_enabled or turn.day_number < _CONFIG.consumable_from_day:
+        return
+    name = _CONFIG.consumable_name
+    price = turn.shop_prices.get(name)
+    if price is None or turn.gold - price < reserve:
+        return
+    if holding_voucher or name in role.backpack or role.backpack_full:
+        return
+    shop = _near_zone(state, role, "weaponShop")
+    if shop is not None:
+        commands[role.unit_id] = buy_command(name)
+        return
+    shop = _nearest_zone(state, role, "weaponShop")
+    if shop is not None:
+        step = _approach(state, role, shop, state.claimed)
+        if step is not None:
+            commands[role.unit_id] = move_command(step)
 
 
 # ---------------------------------------------------------------------------
@@ -818,6 +908,51 @@ def _night(state: _State, commands: dict[int, dict[str, Any]]) -> None:
             step = _approach(state, role, post, state.claimed, adjacent=False)
             if step is not None:
                 commands[role.unit_id] = move_command(step)
+    _consumable_phase(state, commands)
+
+
+def _consumable_phase(state: _State, commands: dict[int, dict[str, Any]]) -> None:
+    """Throw DizzyWeapon/Bomb with roles whose tower is cooling down (free
+    action) or that are unassigned. Survival gate: defensive clusters only."""
+    if not _CONFIG.consumables_enabled:
+        return
+    if state.turn.day_number < _CONFIG.consumable_from_day or not state.turn.robots:
+        return
+    name = _CONFIG.consumable_name
+    idle_roles = []
+    for tower_id, role_id in state.pairs.items():
+        tower = state.towers[tower_id]
+        if tower.cooldown > 0 and role_id not in commands:
+            idle_roles.append(state.roles[role_id])
+    for role_id, role in state.roles.items():
+        if role_id not in state.pairs.values() and role_id not in commands:
+            idle_roles.append(role)
+    holders = [role for role in idle_roles if name in role.backpack]
+    if not holders:
+        return
+    target = _best_cluster(state)
+    if target is None:
+        return
+    commands[holders[0].unit_id] = use_command(name, target)
+
+
+def _best_cluster(state: _State) -> Pos | None:
+    """Highest-value 3x3 robot cluster close to the base (defensive use only)."""
+    robots = [robot for robot in state.turn.robots if robot.health > 0]
+    best: tuple[float, Pos] | None = None
+    for centre in robots:
+        if _footprint_distance(centre.pos, state.footprint) > 6:
+            continue
+        value = sum(
+            ROBOT_VALUE.get(other.kind, 1)
+            for other in robots
+            if distance(centre.pos, other.pos) <= 1
+        )
+        if best is None or value > best[0]:
+            best = (value, centre.pos)
+    if best is not None and best[0] >= _CONFIG.consumable_min_cluster:
+        return best[1]
+    return None
 
 
 def _threat(state: _State, robot: Robot, damage: int, expected: int = 0) -> float:

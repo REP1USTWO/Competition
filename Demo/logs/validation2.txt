@@ -1,0 +1,9 @@
+champion                 surv=9.60  score=761.42  destr=9  p10=546
+min-defense-2            surv=9.96  score=796.34  destr=1  p10=772
+mindef2+walls-d2         surv=9.86  score=776.02  destr=2  p10=751
+--- champion worst 5 (validation) ---
+  destroyed_round=907 surv=6 score=362 hp_by_day=[1500, 1480, 1480, 1170, 1170, 595, 0, 0, 0, 0] unmanned=259 towers_end=[('rocket', 2, 85)]
+  destroyed_round=892 surv=6 score=374 hp_by_day=[1500, 1420, 1410, 1410, 1200, 940, 0, 0, 0, 0] unmanned=110 towers_end=[]
+  destroyed_round=1009 surv=7 score=396 hp_by_day=[1500, 1500, 1500, 1360, 1360, 2880, 480, 0, 0, 0] unmanned=148 towers_end=[]
+  destroyed_round=1034 surv=7 score=494 hp_by_day=[1500, 1480, 1480, 1480, 1480, 1480, 450, 0, 0, 0] unmanned=207 towers_end=[('railgun', 2, 740), ('rocket', 2, 1500), ('railgun', 2, 1005)]
+  destroyed_round=1124 surv=8 score=546 hp_by_day=[1500, 1475, 1475, 3000, 2640, 2430, 1310, 80, 0, 0] unmanned=128 towers_end=[]

@@ -1,0 +1,33 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\50214\Desktop\Competition\Demo\CoreGeek\CoreGeek\experiments\runner.py", line 147, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\50214\Desktop\Competition\Demo\CoreGeek\CoreGeek\experiments\runner.py", line 138, in main
+    result = run_experiment(name, args.games, args.seed_start, out_root, overrides)
+  File "C:\Users\50214\Desktop\Competition\Demo\CoreGeek\CoreGeek\experiments\runner.py", line 92, in run_experiment
+    metrics = run_match(config, scenario)
+  File "C:\Users\50214\Desktop\Competition\Demo\CoreGeek\CoreGeek\experiments\sim.py", line 472, in run_match
+    world = World(scenario)
+                  ^^^^^^^^^
+  File "C:\Users\50214\Desktop\Competition\Demo\CoreGeek\CoreGeek\src\agent\brain.py", line 140, in decide
+    return _LAYOUT
+            ^^^^^^
+  File "C:\Users\50214\Desktop\Competition\Demo\CoreGeek\CoreGeek\src\agent\brain.py", line 367, in _day
+    turn = state.turn
+            ^^^^^^^^^
+  File "C:\Users\50214\Desktop\Competition\Demo\CoreGeek\CoreGeek\src\agent\brain.py", line 538, in _worker_day
+    commands[role.unit_id] = use_command("Medicine")
+    ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\50214\Desktop\Competition\Demo\CoreGeek\CoreGeek\src\agent\brain.py", line 716, in _mine
+    if focus is not None and mineral != focus:
+               ^^^^^^^^^^^^^
+TypeError: '<' not supported between instances of 'Pos' and 'Pos'
+
+== p2-build-tempo (games=30, seeds>=1000) ==
+variant                   survival_days    score_total   score_combat     station_hp          kills    gold_earned       upgrades        illegal  attack_misses weapon_idle_ro worker_idle_ro time_to_3_towe destroyed
+rush-3                             9.93          804.7         261.03        3239.33         131.03         715.63           5.27          13.27          12.63          889.7          108.3            6.0         1
+min-defense-2                      10.0         800.53         250.53         3625.5          125.2          731.5           5.37          19.43          17.57         829.37         116.33          131.0         0
+  worst rush-3: survival_min=8 score_p10=779 hp_min=0
+  worst min-defense-2: survival_min=10 score_p10=771 hp_min=540

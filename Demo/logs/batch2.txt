@@ -1,0 +1,47 @@
+
+== p4-upgrade-delay (games=30, seeds>=1000) ==
+variant                   survival_days    score_total   score_combat     station_hp          kills    gold_earned       upgrades        illegal  attack_misses weapon_idle_ro worker_idle_ro time_to_3_towe destroyed
+immediate                          9.93          804.7         261.03        3239.33         131.03         715.63           5.27          13.27          12.63          889.7          108.3            6.0         1
+hold-80                            9.97         797.83         251.17        1359.33         127.27         721.17            3.2          13.43           12.8         873.33         107.83            6.0         1
+hold-65                             9.9         790.37         250.03        1314.33          127.0         721.07           3.13           13.4          12.77         871.17         111.27            6.0         2
+hold-50                             9.8         778.77         247.43        1310.67         126.07         719.73            3.1          13.43           12.8         870.77          117.6            6.0         3
+  worst immediate: survival_min=8 score_p10=779 hp_min=0
+  worst hold-80: survival_min=9 score_p10=779 hp_min=0
+  worst hold-65: survival_min=8 score_p10=777 hp_min=0
+  worst hold-50: survival_min=7 score_p10=652 hp_min=0
+
+== p7-gold-reserve (games=30, seeds>=1000) ==
+variant                   survival_days    score_total   score_combat     station_hp          kills    gold_earned       upgrades        illegal  attack_misses weapon_idle_ro worker_idle_ro time_to_3_towe destroyed
+reserve-0                          9.93          804.7         261.03        3239.33         131.03         715.63           5.27          13.27          12.63          889.7          108.3            6.0         1
+reserve-25                         9.83          790.1         255.43        2922.83         129.53         704.83           4.93           13.2          12.53         866.53          114.1            6.0         2
+reserve-50                         9.83         784.13          249.8         2785.0         127.67         695.67           4.83          12.67          11.93         862.53          111.6            6.0         3
+  worst reserve-0: survival_min=8 score_p10=779 hp_min=0
+  worst reserve-25: survival_min=7 score_p10=779 hp_min=0
+  worst reserve-50: survival_min=7 score_p10=709 hp_min=0
+
+== p11-consumables (games=30, seeds>=1000) ==
+variant                   survival_days    score_total   score_combat     station_hp          kills    gold_earned       upgrades        illegal  attack_misses weapon_idle_ro worker_idle_ro time_to_3_towe destroyed
+champion                           9.93          804.7         261.03        3239.33         131.03         715.63           5.27          13.27          12.63          889.7          108.3            6.0         1
+dizzy-d6                           9.97         803.23         256.57         2674.0          129.6         716.97            4.7          13.17          12.53         879.23          104.0            6.0         1
+dizzy-d4                           9.97         803.23         256.57         2674.0          129.6         716.97            4.7          13.17          12.53         879.23          104.0            6.0         1
+bomb-d6                            9.93         801.07          257.4        2687.67         129.77         716.33            4.7           13.3          12.67         884.03         106.37            6.0         1
+  worst champion: survival_min=8 score_p10=779 hp_min=0
+  worst dizzy-d6: survival_min=9 score_p10=779 hp_min=0
+  worst dizzy-d4: survival_min=9 score_p10=779 hp_min=0
+  worst bomb-d6: survival_min=8 score_p10=779 hp_min=0
+
+== p12-wall-workers (games=30, seeds>=1000) ==
+variant                   survival_days    score_total   score_combat     station_hp          kills    gold_earned       upgrades        illegal  attack_misses weapon_idle_ro worker_idle_ro time_to_3_towe destroyed
+walls-1-worker                     9.93          804.7         261.03        3239.33         131.03         715.63           5.27          13.27          12.63          889.7          108.3            6.0         1
+walls-2-workers                    9.93         777.23         233.57         1885.5         123.57         406.27           3.07          16.27          15.23         830.23          148.4            6.0         1
+walls-none                          7.1         468.77          174.1          85.67         104.53          728.1           5.07           13.2           9.77         871.03         249.93            6.0        29
+  worst walls-1-worker: survival_min=8 score_p10=779 hp_min=0
+  worst walls-2-workers: survival_min=8 score_p10=744 hp_min=0
+  worst walls-none: survival_min=4 score_p10=336 hp_min=0
+
+== p13-upgrade-order (games=30, seeds>=1000) ==
+variant                   survival_days    score_total   score_combat     station_hp          kills    gold_earned       upgrades        illegal  attack_misses weapon_idle_ro worker_idle_ro time_to_3_towe destroyed
+station-l3-first                   9.93          804.7         261.03        3239.33         131.03         715.63           5.27          13.27          12.63          889.7          108.3            6.0         1
+weapons-l3-first                   9.93          807.6         263.93         2564.0         131.73          718.3           5.27          13.43           12.8         893.67          108.3            6.0         1
+  worst station-l3-first: survival_min=8 score_p10=779 hp_min=0
+  worst weapons-l3-first: survival_min=8 score_p10=779 hp_min=0

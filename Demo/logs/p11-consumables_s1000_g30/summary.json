@@ -1,0 +1,363 @@
+{
+ "experiment": "p11-consumables",
+ "games": 30,
+ "seed_start": 1000,
+ "variants": {
+  "champion": {
+   "survival_days": {
+    "mean": 9.93,
+    "min": 8,
+    "p10": 10
+   },
+   "score_total": {
+    "mean": 804.7,
+    "min": 564,
+    "p10": 779
+   },
+   "score_combat": {
+    "mean": 261.03,
+    "min": 204,
+    "p10": 229
+   },
+   "station_hp": {
+    "mean": 3239.33,
+    "min": 0,
+    "p10": 1110
+   },
+   "kills": {
+    "mean": 131.03,
+    "min": 115,
+    "p10": 120
+   },
+   "gold_earned": {
+    "mean": 715.63,
+    "min": 350,
+    "p10": 541
+   },
+   "upgrades": {
+    "mean": 5.27,
+    "min": 3,
+    "p10": 4
+   },
+   "illegal": {
+    "mean": 13.27,
+    "min": 3,
+    "p10": 7
+   },
+   "attack_misses": {
+    "mean": 12.63,
+    "min": 2,
+    "p10": 7
+   },
+   "walls_built": {
+    "mean": 12.23,
+    "min": 2,
+    "p10": 5
+   },
+   "weapon_idle_rounds": {
+    "mean": 889.7,
+    "min": 772,
+    "p10": 791
+   },
+   "weapon_unmanned_rounds": {
+    "mean": 8.07,
+    "min": 0,
+    "p10": 0
+   },
+   "rocket_shots": {
+    "mean": 125.0,
+    "min": 102,
+    "p10": 112
+   },
+   "worker_idle_rounds": {
+    "mean": 108.3,
+    "min": 39,
+    "p10": 47
+   },
+   "time_to_3_towers": {
+    "mean": 6.0,
+    "min": 6,
+    "p10": 6
+   },
+   "time_to_first_upgrade": {
+    "mean": 245.03,
+    "min": 56,
+    "p10": 141
+   },
+   "station_damage": {
+    "mean": 466.33,
+    "min": 0,
+    "p10": 0
+   },
+   "games": 30,
+   "destroyed": 1
+  },
+  "dizzy-d6": {
+   "survival_days": {
+    "mean": 9.97,
+    "min": 9,
+    "p10": 10
+   },
+   "score_total": {
+    "mean": 803.23,
+    "min": 664,
+    "p10": 779
+   },
+   "score_combat": {
+    "mean": 256.57,
+    "min": 214,
+    "p10": 229
+   },
+   "station_hp": {
+    "mean": 2674.0,
+    "min": 0,
+    "p10": 330
+   },
+   "kills": {
+    "mean": 129.6,
+    "min": 115,
+    "p10": 120
+   },
+   "gold_earned": {
+    "mean": 716.97,
+    "min": 350,
+    "p10": 581
+   },
+   "upgrades": {
+    "mean": 4.7,
+    "min": 3,
+    "p10": 4
+   },
+   "illegal": {
+    "mean": 13.17,
+    "min": 3,
+    "p10": 6
+   },
+   "attack_misses": {
+    "mean": 12.53,
+    "min": 2,
+    "p10": 6
+   },
+   "walls_built": {
+    "mean": 12.43,
+    "min": 3,
+    "p10": 5
+   },
+   "weapon_idle_rounds": {
+    "mean": 879.23,
+    "min": 768,
+    "p10": 772
+   },
+   "weapon_unmanned_rounds": {
+    "mean": 12.53,
+    "min": 0,
+    "p10": 0
+   },
+   "rocket_shots": {
+    "mean": 125.9,
+    "min": 102,
+    "p10": 114
+   },
+   "worker_idle_rounds": {
+    "mean": 104.0,
+    "min": 43,
+    "p10": 44
+   },
+   "time_to_3_towers": {
+    "mean": 6.0,
+    "min": 6,
+    "p10": 6
+   },
+   "time_to_first_upgrade": {
+    "mean": 245.03,
+    "min": 56,
+    "p10": 141
+   },
+   "station_damage": {
+    "mean": 494.67,
+    "min": 0,
+    "p10": 0
+   },
+   "games": 30,
+   "destroyed": 1
+  },
+  "dizzy-d4": {
+   "survival_days": {
+    "mean": 9.97,
+    "min": 9,
+    "p10": 10
+   },
+   "score_total": {
+    "mean": 803.23,
+    "min": 664,
+    "p10": 779
+   },
+   "score_combat": {
+    "mean": 256.57,
+    "min": 214,
+    "p10": 229
+   },
+   "station_hp": {
+    "mean": 2674.0,
+    "min": 0,
+    "p10": 330
+   },
+   "kills": {
+    "mean": 129.6,
+    "min": 115,
+    "p10": 120
+   },
+   "gold_earned": {
+    "mean": 716.97,
+    "min": 350,
+    "p10": 581
+   },
+   "upgrades": {
+    "mean": 4.7,
+    "min": 3,
+    "p10": 4
+   },
+   "illegal": {
+    "mean": 13.17,
+    "min": 3,
+    "p10": 6
+   },
+   "attack_misses": {
+    "mean": 12.53,
+    "min": 2,
+    "p10": 6
+   },
+   "walls_built": {
+    "mean": 12.43,
+    "min": 3,
+    "p10": 5
+   },
+   "weapon_idle_rounds": {
+    "mean": 879.23,
+    "min": 768,
+    "p10": 772
+   },
+   "weapon_unmanned_rounds": {
+    "mean": 12.53,
+    "min": 0,
+    "p10": 0
+   },
+   "rocket_shots": {
+    "mean": 125.9,
+    "min": 102,
+    "p10": 114
+   },
+   "worker_idle_rounds": {
+    "mean": 104.0,
+    "min": 43,
+    "p10": 44
+   },
+   "time_to_3_towers": {
+    "mean": 6.0,
+    "min": 6,
+    "p10": 6
+   },
+   "time_to_first_upgrade": {
+    "mean": 245.03,
+    "min": 56,
+    "p10": 141
+   },
+   "station_damage": {
+    "mean": 494.67,
+    "min": 0,
+    "p10": 0
+   },
+   "games": 30,
+   "destroyed": 1
+  },
+  "bomb-d6": {
+   "survival_days": {
+    "mean": 9.93,
+    "min": 8,
+    "p10": 10
+   },
+   "score_total": {
+    "mean": 801.07,
+    "min": 543,
+    "p10": 779
+   },
+   "score_combat": {
+    "mean": 257.4,
+    "min": 183,
+    "p10": 229
+   },
+   "station_hp": {
+    "mean": 2687.67,
+    "min": 0,
+    "p10": 680
+   },
+   "kills": {
+    "mean": 129.77,
+    "min": 109,
+    "p10": 120
+   },
+   "gold_earned": {
+    "mean": 716.33,
+    "min": 350,
+    "p10": 541
+   },
+   "upgrades": {
+    "mean": 4.7,
+    "min": 3,
+    "p10": 4
+   },
+   "illegal": {
+    "mean": 13.3,
+    "min": 3,
+    "p10": 8
+   },
+   "attack_misses": {
+    "mean": 12.67,
+    "min": 2,
+    "p10": 7
+   },
+   "walls_built": {
+    "mean": 12.4,
+    "min": 2,
+    "p10": 5
+   },
+   "weapon_idle_rounds": {
+    "mean": 884.03,
+    "min": 771,
+    "p10": 772
+   },
+   "weapon_unmanned_rounds": {
+    "mean": 10.7,
+    "min": 0,
+    "p10": 0
+   },
+   "rocket_shots": {
+    "mean": 125.27,
+    "min": 101,
+    "p10": 114
+   },
+   "worker_idle_rounds": {
+    "mean": 106.37,
+    "min": 43,
+    "p10": 44
+   },
+   "time_to_3_towers": {
+    "mean": 6.0,
+    "min": 6,
+    "p10": 6
+   },
+   "time_to_first_upgrade": {
+    "mean": 245.03,
+    "min": 56,
+    "p10": 141
+   },
+   "station_damage": {
+    "mean": 481.0,
+    "min": 0,
+    "p10": 0
+   },
+   "games": 30,
+   "destroyed": 1
+  }
+ }
+}

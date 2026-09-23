@@ -1,0 +1,8 @@
+--- validation seeds 2000-2049 ---
+champion                     surv=9.60  score=761.42  combat=247.6  destr=9  hp_min=0     p10=546
+weapons-l3-first             surv=9.56  score=758.70  combat=248.7  destr=10 hp_min=0     p10=546
+--- stress wave_mult=1.25 (validation seeds) ---
+champion x1.25               surv=9.07  score=733.00  combat=268.7  destr=12 hp_min=0     p10=466
+weapons-l3-first x1.25       surv=9.03  score=732.20  combat=270.9  destr=12 hp_min=0     p10=466
+--- stress wave_mult=0.8 (validation seeds) ---
+champion x0.8                surv=9.77  score=745.17  combat=217.2  destr=4  hp_min=0     p10=646
