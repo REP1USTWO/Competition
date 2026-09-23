@@ -65,6 +65,8 @@ def next_step(
     goal: Pos,
     extra_blocked: Iterable[Pos] = (),
 ) -> Pos | None:
+    if moving.pos == goal:
+        return None
     result = _search(turn, moving, goal, extra_blocked)
     if result is None:
         return None

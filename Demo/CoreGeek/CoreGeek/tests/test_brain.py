@@ -103,6 +103,15 @@ class DayBuildTests(BrainTestCase):
         results = {"10010": False}
         for round_no in (2, 3):
             out = decide(payload(roles, round_no=round_no, gold=75, results=results))
+        # The selected two-tower opening may need to walk to its next site.
+        # Follow the emitted steps instead of requiring a nearby third choice.
+        for round_no in range(4, 12):
+            command = out.get("10010", {})
+            if command.get("action") != "move":
+                break
+            roles[1] = {**roles[1], "pos": command["targetPos"][0]}
+            out = decide(payload(roles, round_no=round_no, gold=75,
+                                 results={"10010": True}))
         second = next((c for c in out.values() if c["action"] == "build"), None)
         self.assertIsNotNone(second)
         self.assertNotEqual(second["targetPos"][0], site)

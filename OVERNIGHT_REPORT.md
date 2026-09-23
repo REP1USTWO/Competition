@@ -128,3 +128,13 @@ Decision: **KEEP 1 stone worker.**
 weapons-l3-first: 807.6 mean / 263.9 combat vs champion 804.7 / 261.0; same
 destructions (1), same p10 (779), hp_end lower (2564 vs 3239, station heal later).
 Marginal mean edge → **candidate, decided by validation seeds 2000–2049.**
+
+## Final handoff — 2026-09-23
+
+Original experimental notes above are preserved. The later `validation2.txt`
+supports **min-defense-2** (50 validation games: 1 base destroyed vs rush's 9,
+mean score 796.34 vs 761.42). Final delivery selects that existing candidate.
+`validation.txt` rejects weapons-L3-first on validation; keep the original order.
+See `FINAL_REPORT.md` for final evidence, bounded recheck, fixes and limitations.
+Old P9 scoring claims lack a separate raw result artifact; do not treat them as
+an independently verified cross-team scoring experiment.

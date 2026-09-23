@@ -493,8 +493,9 @@ def run_match(config: brain.StrategyConfig | None = None,
     """Drive one full simulated match with the real production strategy."""
     scenario = scenario or Scenario()
     world = World(scenario)
+    previous_config = brain.get_config()
     brain.reset_memory()
-    brain.set_config(config or brain.StrategyConfig())
+    brain.set_config(config or brain.champion_config())
     try:
         for round_no in range(1, CYCLE * scenario.days + 1):
             world._round_no = round_no
@@ -521,7 +522,8 @@ def run_match(config: brain.StrategyConfig | None = None,
                 # Keep responding (the harness must not crash) but stop scoring.
                 pass
     finally:
-        brain.set_config(brain.StrategyConfig())
+        brain.set_config(previous_config)
+        brain.reset_memory()
     m = world.m
     if not m.destroyed_round:
         m.survival_days = scenario.days

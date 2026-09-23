@@ -12,6 +12,7 @@ many day/night cycles.
 """
 
 import threading
+from copy import deepcopy
 from typing import Any, Iterable
 
 from .grid import next_step, path_length
@@ -85,7 +86,16 @@ class StrategyConfig:
         self.station_l3_first = station_l3_first
 
 
-_CONFIG = StrategyConfig()
+def champion_config() -> StrategyConfig:
+    """Frozen final selection: validation2.txt favors two towers on day one.
+
+    StrategyConfig defaults retain the historical rush baseline so archived
+    experiment names remain reproducible. Production explicitly selects here.
+    """
+    return StrategyConfig(day1_tower_cap=2)
+
+
+_CONFIG = champion_config()
 
 
 def set_config(config: StrategyConfig) -> None:
@@ -111,6 +121,7 @@ class Memory:
         self.team_key: tuple[str, str] | None = None
         self.station_pos: Pos | None = None
         self.last_round = 0
+        self.last_turn: Turn | None = None
         self.assignment: dict[int, int] = {}        # role_id -> tower_id
         self.last_commands: dict[int, dict[str, Any]] = {}
         self.build_failures: dict[tuple[Pos, str], int] = {}
@@ -143,6 +154,8 @@ def _layout() -> Layout:
 def decide(payload: dict[str, Any]) -> dict[str, dict[str, Any]]:
     turn = Turn.load(payload)
     with _LOCK:
+        if _MEMORY.last_turn == turn:
+            return {str(k): deepcopy(v) for k, v in _MEMORY.last_commands.items()}
         mem = _session(turn, _MEMORY)
         _review_feedback(turn, mem)
         _observe(turn, mem)
@@ -158,6 +171,7 @@ def decide(payload: dict[str, Any]) -> dict[str, dict[str, Any]]:
         result = context.dump()
         mem.last_commands = {int(key): value for key, value in result.items()}
         mem.last_round = turn.round_no
+        mem.last_turn = turn
         return result
 
 
@@ -176,6 +190,8 @@ def _session(turn: Turn, mem: Memory) -> Memory:
 
 def _review_feedback(turn: Turn, mem: Memory) -> None:
     """Deterministic backoff: never blindly repeat a failed action (B: feedback field)."""
+    if turn.round_no != mem.last_round + 1:
+        return  # Feedback describes the immediately preceding round only.
     for unit_id, ok in turn.last_results.items():
         command = mem.last_commands.get(unit_id)
         if ok:
@@ -298,6 +314,15 @@ def _assignment(state: _State) -> None:
         cells = _stand_cells(state, tower.pos)
         if cells:
             posts[tower_id] = cells[0]
+        else:
+            # An occupied operating position is usable by its current controller.
+            # Other occupants still remain obstacles to approaching characters.
+            nearby = [role for role in state.roles.values()
+                      if distance(role.pos, tower.pos) == 1]
+            if nearby:
+                nearby.sort(key=lambda role: (mem.assignment.get(role.unit_id) != tower_id,
+                                               role.unit_id))
+                posts[tower_id] = nearby[0].pos
     pairs: dict[int, int] = {}
     used: set[int] = set()
     # 1. Keep still-valid pairings: both alive, role can stand by the tower.
@@ -387,15 +412,19 @@ def _returning_roles(state: _State) -> set[int]:
     returning: set[int] = set()
     for role_id, role in state.roles.items():
         post = state.role_post.get(role_id)
-        if post is None or role.pos == post:
+        if post is None:
+            continue
+        if role.pos == post:
+            if remaining <= _CONFIG.dusk_margin:
+                returning.add(role_id)
             continue
         walk = state.reach(role, post)
         if walk is None:
             # Unreachable right now: keep retrying rather than stranding far away.
-            if remaining <= DUSK_MARGIN * 2:
+            if remaining <= _CONFIG.dusk_margin * 2:
                 returning.add(role_id)
             continue
-        if remaining <= walk + DUSK_MARGIN:
+        if remaining <= walk + _CONFIG.dusk_margin:
             returning.add(role_id)
     return returning
 
@@ -993,6 +1022,13 @@ def _pick_targets(
     ]
     if not robots:
         return None
+    # A scoring penalty is not a survival gate: predicted kills are uncertain
+    # (e.g. railgun interception). Keep reachable home/unknown threats first.
+    defensive = [robot for robot in robots
+                 if robot.target_team in ("", state.turn.team_type)
+                 or (state.footprint and _footprint_distance(robot.pos, state.footprint) <= 3)]
+    if defensive:
+        robots = defensive
     robots.sort(
         key=lambda robot: _threat(state, robot, damage, expected.get(robot.robot_id, 0)),
         reverse=True,

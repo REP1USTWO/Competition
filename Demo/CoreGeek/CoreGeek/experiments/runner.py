@@ -20,6 +20,8 @@ from experiments.sim import Scenario, run_match
 
 CFG = brain.StrategyConfig
 
+# Historical experiment definitions: CFG() is the old rush baseline, not the
+# final production champion_config(). Keep labels comparable to archived logs.
 # Each entry: (variant name, config, scenario overrides)
 EXPERIMENTS = {
     "p0-loadout": [
