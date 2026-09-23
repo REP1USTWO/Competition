@@ -54,7 +54,7 @@
 - 最终：94项 unittest；Python 3.14 和本机另一个 Python 3.12 均通过。包括多昼夜状态机和1300回合全局模拟。
 - 十天固定种子模拟：基地HP2920、等级2、三塔均在、击杀119、采矿收入506、升级4次、输出1989条动作。
 - 模拟器的 `illegal=12` 统计包含攻击落点未命中等执行失败，**不是官方队伍异常次数**；不宣称模拟“零非法”或等同官方验证。
-- HTTP：临时独立目录复制 `src/main3.py/layout.json/run.sh` 后真实启动，25连续请求、8并发同回合请求、坏JSON后恢复、反侧坐标攻击通过；正常串行请求本机最大约22ms。
+- HTTP：临时独立目录复制 `src/main3.py/layout.json/run.sh` 后真实启动，25连续请求、8并发同回合请求、坏JSON后恢复、反侧坐标攻击通过；main最终回归正常串行请求最大31.07ms（此前约22ms）。
 - `bash run.sh <port>` 已在本机 Git Bash 中实际启动并接收官方样例；测试进程已停止。尚未在官方 Linux 容器验证。
 - `python -m compileall -q src main3.py`、`git diff --check` 通过；main 上再次执行完整回归。
 - 详细日志：`Demo/logs/final-regression.txt`、`final-python312.txt`、`final-main-validation.txt`；实验复核见 `final-before/`、`final-after/`。
